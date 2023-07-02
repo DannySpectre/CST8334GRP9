@@ -26,16 +26,26 @@
     <div class="container mx-auto flex justify-between pt-10 pr-5">
       <div class="pt-2 flex justify-start gap-1 pl-5">
         <div id="deck" class="w-[150px] h-[200px] pl-2"></div>
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">Pile</div>
+        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
+          Pile
+        </div>
       </div>
       <div class="pt-2 flex justify-end gap-1">
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">Spade</div>
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">Club</div>
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">Heart</div>
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">Diamond</div>
+        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
+          Spade
+        </div>
+        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
+          Club
+        </div>
+        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
+          Heart
+        </div>
+        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
+          Diamond
+        </div>
       </div>
     </div>
-    <div id="tableau" class="pt-2 flex justify-between gap-1 "></div>
+    <div id="tableau" class="pt-2 flex justify-between gap-1"></div>
 
     <script>
       let deckId;
@@ -87,6 +97,20 @@
 
       let selectedCard = null;
 
+      function getCardColor(cardCode) {
+        const suit = cardCode[cardCode.length - 1]; // get the last character of the card code
+        switch (suit) {
+          case "H":
+          case "D":
+            return "red";
+          case "S":
+          case "C":
+            return "black";
+          default:
+            throw new Error(`Invalid suit: ${suit}`);
+        }
+      }
+
       function flipLastCard(column) {
         const cardsInColumn = column.querySelectorAll(".rounded");
         const lastCard = cardsInColumn[cardsInColumn.length - 1];
@@ -110,7 +134,10 @@
             let card = document.createElement("div");
 
             let cardValue = cards[(i * (i + 1)) / 2 + j].code;
-            card.className = "rounded w-[150px] h-[200px] pt-2 focus:outline-none focus:ring focus:ring-violet-300";
+            const color = getCardColor(cardValue);
+
+            card.className =
+              "rounded w-[150px] h-[200px] pt-2 focus:outline-none focus:ring focus:ring-violet-300";
             card.setAttribute("data-value", cardValue); // Store card value for later
 
             if (j === i) {
@@ -121,14 +148,40 @@
               card.innerHTML = `<img src="src/back.png" alt="Card Back">`;
             }
 
+            // card.onclick = function () {
+            //   console.log(`Card clicked: ${cardValue}`);
+            //   if (selectedCard) {
+            //     // Move selected card to this column
+            //     const oldColumn = selectedCard.parentNode;
+            //     column.appendChild(selectedCard);
+            //     flipLastCard(oldColumn); // Flip last card in old column
+            //     selectedCard = null;
+            //   } else {
+            //     selectedCard = card;
+            //   }
+            // };
+            // column.appendChild(card);
+
             card.onclick = function () {
               console.log(`Card clicked: ${cardValue}`);
               if (selectedCard) {
-                // Move selected card to this column
-                const oldColumn = selectedCard.parentNode;
-                column.appendChild(selectedCard);
-                flipLastCard(oldColumn); // Flip last card in old column
-                selectedCard = null;
+                const selectedCardValue =
+                  selectedCard.getAttribute("data-value");
+                if (
+                  getCardColor(selectedCardValue) !== getCardColor(cardValue)
+                ) {
+                  // Move selected card to this column
+                  const oldColumn = selectedCard.parentNode;
+                  column.appendChild(selectedCard);
+                  flipLastCard(oldColumn); // Flip last card in old column
+                  selectedCard = null;
+                } else {
+                  console.log(
+                    `Cannot place a ${getCardColor(
+                      selectedCardValue
+                    )} card on another ${getCardColor(cardValue)} card.`
+                  );
+                }
               } else {
                 selectedCard = card;
               }
