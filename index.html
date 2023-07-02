@@ -148,40 +148,13 @@
               card.innerHTML = `<img src="src/back.png" alt="Card Back">`;
             }
 
-            // card.onclick = function () {
-            //   console.log(`Card clicked: ${cardValue}`);
-            //   if (selectedCard) {
-            //     // Move selected card to this column
-            //     const oldColumn = selectedCard.parentNode;
-            //     column.appendChild(selectedCard);
-            //     flipLastCard(oldColumn); // Flip last card in old column
-            //     selectedCard = null;
-            //   } else {
-            //     selectedCard = card;
-            //   }
-            // };
-            // column.appendChild(card);
-
             card.onclick = function () {
               console.log(`Card clicked: ${cardValue}`);
               if (selectedCard) {
-                const selectedCardValue =
-                  selectedCard.getAttribute("data-value");
-                if (
-                  getCardColor(selectedCardValue) !== getCardColor(cardValue)
-                ) {
-                  // Move selected card to this column
-                  const oldColumn = selectedCard.parentNode;
-                  column.appendChild(selectedCard);
-                  flipLastCard(oldColumn); // Flip last card in old column
-                  selectedCard = null;
-                } else {
-                  console.log(
-                    `Cannot place a ${getCardColor(
-                      selectedCardValue
-                    )} card on another ${getCardColor(cardValue)} card.`
-                  );
-                }
+                const oldColumn = selectedCard.parentNode;
+                column.appendChild(selectedCard);
+                flipLastCard(oldColumn);
+                selectedCard = null;
               } else {
                 selectedCard = card;
               }
