@@ -6,52 +6,121 @@
     <title>Solitaire</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="mx-auto max-w-6xl">
+  <body class="mx-auto max-w-6xl bg-gray-200">
     <div class="container flex justify-center mx-auto">
       <h1 class="text-5xl pt-2">Welcome to Solitaire!</h1>
-      <div class="pl-10 pt-3">
+
+      <div class="pl-5 pt-3">
         <button
           id="play"
           class="border border-black rounded px-6 py-2 text-lg font-bold bg-black text-white"
-          onclick="createDeck()">
-          Play
+          onclick="startGame()">
+          New Game
         </button>
         <button
-          id="shuffle"
-          class="border border-black rounded px-6 py-2 text-lg font-bold bg-black text-white">
-          Shuffle
+          id="reshuffle"
+          class="border border-black rounded px-6 py-2 text-lg font-bold bg-black text-white invisible"
+          onclick="startGame()">
+          Reshuffle
         </button>
       </div>
+      <div class="pl-6">
+        <div>
+          <p class="text-lg">Timer: <span id="timer"> </span></p>
+        </div>
+        <div>
+          <p class="text-lg">Move Counter: <span id="moveCounter"> </span></p>
+        </div>
+      </div>
     </div>
-    <div class="container mx-auto flex justify-between pt-10 pr-5">
+    <div class="container flex justify-center mx-auto">
       <div class="pt-2 flex justify-start gap-1 pl-5">
         <div id="deck" class="w-[150px] h-[200px] pl-2"></div>
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
-          Pile
-        </div>
+        <div
+          id="pile"
+          class="rounded border border-black pile flex justify-start w-[150px] h-[200px] pl-2"></div>
+        <div id="pile-2" class="w-[150px] h-[200px] pl-2"></div>
+        <div id="pile-3" class="w-[150px] h-[200px] pl-2"></div>
       </div>
-      <div class="pt-2 flex justify-end gap-1">
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
-          Spade
-        </div>
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
-          Club
-        </div>
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
-          Heart
-        </div>
-        <div class="rounded border border-black w-[150px] h-[200px] pl-2">
-          Diamond
-        </div>
+      <div class="pl-20 pt-2 flex justify-end gap-1">
+        <div
+          id="foundation-1"
+          class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
+        <div
+          id="foundation-2"
+          class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
+        <div
+          id="foundation-3"
+          class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
+        <div
+          id="foundation-4"
+          class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
       </div>
     </div>
-    <div id="tableau" class="pt-2 flex justify-between gap-1"></div>
+    <div id="tableau" class="pt-2 flex justify-between gap-1 column"></div>
+    <style>
+      .highlight {
+        box-shadow: 0 0 10px 2px red;
+      }
+    </style>
 
     <script>
       let deckId;
-      let cards;
-      let remainingCards;
+      let cards = [];
+      let remainingCards = [];
+      let stockPile = [];
+      let wastePile = [];
+      let piles = Array(7)
+        .fill(null)
+        .map(() => []);
 
+      let selectedCard = null; // Add selectedCard variable
+
+      // Timer variables
+      let startTime;
+      let timerInterval;
+
+      // Move counter variables
+      let moveCount = 0;
+
+      // Function to start the timer
+      function startTimer() {
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      // Function to update the timer
+      function updateTimer() {
+        let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        let minutes = Math.floor(elapsedTime / 60);
+        let seconds = elapsedTime % 60;
+        document.getElementById("timer").textContent =
+          minutes + "m " + seconds + "s";
+      }
+
+      // Function to increment the move counter
+      function incrementMoveCounter() {
+        moveCount++;
+        document.getElementById("moveCounter").textContent = moveCount;
+      }
+
+      // Function to reset the move counter
+      function resetMoveCounter() {
+        moveCount = 0;
+        document.getElementById("moveCounter").textContent = moveCount;
+      }
+      async function startGame() {
+        reshuffle.classList.remove("invisible");
+        selectedCard = null;
+        piles = Array(7)
+          .fill(null)
+          .map(() => []);
+        pile.innerHTML = "";
+        pile.imagesHTML = "";
+        await createDeck();
+        startTimer();
+        resetMoveCounter();
+      }
       async function createDeck() {
         try {
           const response = await fetch(
@@ -60,13 +129,129 @@
           const data = await response.json();
           deckId = data.deck_id;
           await drawCards(28);
-          createTableau(cards);
+          distributeCardsToPiles(cards);
+          await drawRemainingCards(data.remaining);
+          displayStockPile();
         } catch (error) {
           console.log("Error Creating Deck", error);
         }
       }
 
-      document.getElementById("shuffle").onclick = async function () {
+      function distributeCardsToPiles(cards) {
+        let cardIndex = 0;
+        for (let pileIndex = 0; pileIndex < 7; pileIndex++) {
+          for (let j = 0; j <= pileIndex; j++) {
+            piles[pileIndex].push(cards[cardIndex++]);
+          }
+        }
+
+        displayPiles();
+      }
+
+      
+
+      function displayPiles() {
+        const tableau = document.getElementById("tableau");
+        tableau.innerHTML = "";
+        for (let pile of piles) {
+          const pileDiv = document.createElement("div");
+          pileDiv.classList.add("pileDiv");
+
+          // Display all cards but the last one as face down
+          for (let i = 0; i < pile.length - 1; i++) {
+            const cardElement = createCardElement(pile[i].code, true, playCard); // face-down
+            pileDiv.appendChild(cardElement);
+          }
+
+          // Display the last card as face up
+          if (pile.length > 0) {
+            const cardElement = createCardElement(
+              pile[pile.length - 1].code,
+              false,
+              playCard
+            ); // face-up
+            pileDiv.appendChild(cardElement);
+          }
+
+          tableau.appendChild(pileDiv);
+        }
+      }
+
+      async function drawRemainingCards(remainingCards) {
+        try {
+          const response = await fetch(
+            `https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=${remainingCards}`
+          );
+          const data = await response.json();
+          stockPile = data.cards.map((card) => ({
+            value: card.value,
+            suit: card.suit,
+            code: card.code,
+            img: card.image,
+          }));
+        } catch (error) {
+          console.log("Error drawing remaining cards:", error);
+        }
+      }
+
+      function displayStockPile() {
+        const deck = document.getElementById("deck");
+        if (stockPile.length > 0) {
+          deck.innerHTML = `<img src="src/back.png" alt="Card Back">`;
+          deck.onclick = talonPileDraw;
+        } else {
+          deck.innerHTML = `<img src="src/reload.png" alt="Card Back">`;
+          deck.onclick = resetStockPile;
+        }
+      }
+
+      // After the definition of displayStockPile()
+      function resetStockPile() {
+        // Move cards from wastePile to stockPile
+        while (wastePile.length > 0) {
+          stockPile.push(wastePile.pop());
+        }
+
+        // Clear the waste pile display
+        const pile = document.querySelector(".pile");
+        pile.innerHTML = "";
+
+        // Update the stock pile display
+        displayStockPile();
+      }
+
+      function talonPileDraw() {
+        for (let i = 0; i < 3 && stockPile.length > 0; i++) {
+          wastePile.push(stockPile.pop());
+        }
+        incrementMoveCounter();
+        displayWastePile();
+        displayStockPile();
+      }
+
+      function displayWastePile() {
+        const pile = document.querySelector(".pile");
+
+        if (wastePile.length > 0) {
+          let imagesHTML = "";
+          const numImages = Math.min(wastePile.length, 3); // Display up to 3 images
+
+          for (
+            let i = wastePile.length - numImages;
+            i < wastePile.length;
+            i++
+          ) {
+            const card = wastePile[i];
+            imagesHTML += `<img src="${card.img}" alt="${card.code}">`;
+          }
+
+          pile.innerHTML = imagesHTML;
+        } else {
+          pile.innerHTML = "";
+        }
+      }
+
+      async function shuffleDeck() {
         let response = await fetch(
           "https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1&remaining=true"
         );
@@ -78,7 +263,7 @@
         let drawData = await drawResponse.json();
 
         console.log("Deck of Cards:", cards);
-      };
+      }
 
       async function drawCards(count) {
         try {
@@ -86,8 +271,13 @@
             `https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=${count}`
           );
           const data = await response.json();
-          cards = data.cards;
-          remainingCards = data.remaining; // Update remaining cards
+          cards = data.cards.map((card) => ({
+            value: card.value,
+            suit: card.suit,
+            code: card.code,
+            img: card.image,
+          }));
+          remainingCards = data.remaining;
           console.log(remainingCards, "cards remaining in the deck");
           console.log("Deck of Cards:", cards);
         } catch (error) {
@@ -95,74 +285,130 @@
         }
       }
 
-      let selectedCard = null;
+      function createCardElement(cardValue, isFaceDown, clickHandler) {
+        const cardElement = document.createElement("img");
+        cardElement.setAttribute("data-value", cardValue);
+        cardElement.onclick = clickHandler;
+        if (isFaceDown) {
+          cardElement.setAttribute("src", "src/back.png");
+          cardElement.classList.add("down");
+        } else {
+          cardElement.setAttribute(
+            "src",
+            `https://deckofcardsapi.com/static/img/${cardValue}.png`
+          );
+          cardElement.classList.remove("down");
+        }
+        return cardElement;
+      }
 
-      function getCardColor(cardCode) {
-        const suit = cardCode[cardCode.length - 1]; // get the last character of the card code
-        switch (suit) {
-          case "H":
-          case "D":
-            return "red";
+      function parseCardCode(cardCode) {
+        let code = cardCode.slice(0, -1);
+        const suitCode = cardCode[cardCode.length - 1];
+        let suit;
+
+        // Handle the face cards and the Ace
+        switch (code) {
+          case "J":
+            code = "11";
+            break;
+          case "Q":
+            code = "12";
+            break;
+          case "K":
+            code = "13";
+            break;
+          case "A":
+            code = "1";
+            break;
+          case "0":
+            code = "10";
+            break;
+          default:
+            break;
+        }
+
+        switch (suitCode) {
           case "S":
+            suit = "SPADES";
+            break;
           case "C":
+            suit = "CLUBS";
+            break;
+          case "H":
+            suit = "HEARTS";
+            break;
+          case "D":
+            suit = "DIAMONDS";
+            break;
+          default:
+            throw new Error(`Invalid suit code: ${suitCode}`);
+        }
+
+        return { suit, code };
+      }
+
+      function getCardColor(suit) {
+        switch (suit) {
+          case "HEARTS":
+          case "DIAMONDS":
+            return "red";
+          case "SPADES":
+          case "CLUBS":
             return "black";
           default:
             throw new Error(`Invalid suit: ${suit}`);
         }
       }
 
-      function flipLastCard(column) {
-        const cardsInColumn = column.querySelectorAll(".rounded");
-        const lastCard = cardsInColumn[cardsInColumn.length - 1];
-        if (lastCard) {
-          let cardValue = lastCard.getAttribute("data-value");
-          lastCard.innerHTML = `<img src="https://deckofcardsapi.com/static/img/${cardValue}.png" alt="${cardValue}">`;
-        }
-      }
+      function playCard(event) {
+        const clickedCardElement = event.target;
+        const clickedCardCode = clickedCardElement.getAttribute("data-value");
+        const clickedPileIndex = Array.from(
+          clickedCardElement.parentNode.parentNode.children
+        ).indexOf(clickedCardElement.parentNode);
+        const clickedCardIndex = Array.from(
+          clickedCardElement.parentNode.children
+        ).indexOf(clickedCardElement);
 
-      function createTableau(cards) {
-        const deck = document.getElementById("deck");
-        deck.innerHTML = `<img src="src/back.png" alt="Card Back">`;
-        const tableau = document.getElementById("tableau");
-        tableau.innerHTML = "";
+        if (selectedCard) {
+          const selectedCardInfo = parseCardCode(selectedCard.card.code);
+          const clickedCardInfo = parseCardCode(clickedCardCode);
 
-        for (let i = 0; i < 7; i++) {
-          let column = document.createElement("div");
-          column.className = "";
+          const selectedCardColor = getCardColor(selectedCardInfo.suit);
+          const clickedCardColor = getCardColor(clickedCardInfo.suit);
 
-          for (let j = 0; j <= i; j++) {
-            let card = document.createElement("div");
+          if (
+            selectedCardColor !== clickedCardColor &&
+            parseInt(selectedCardInfo.code) ===
+              parseInt(clickedCardInfo.code) - 1
+          ) {
+            let movedCards = piles[selectedCard.pileIndex].splice(
+              selectedCard.cardIndex
+            );
+            piles[clickedPileIndex] =
+              piles[clickedPileIndex].concat(movedCards);
+            incrementMoveCounter();
+            selectedCard.element.classList.remove("highlight");
+            selectedCard = null;
 
-            let cardValue = cards[(i * (i + 1)) / 2 + j].code;
-            const color = getCardColor(cardValue);
-
-            card.className =
-              "rounded w-[150px] h-[200px] pt-2 focus:outline-none focus:ring focus:ring-violet-300";
-            card.setAttribute("data-value", cardValue); // Store card value for later
-
-            if (j === i) {
-              // Card is face up
-              card.innerHTML = `<img src="https://deckofcardsapi.com/static/img/${cardValue}.png" alt="${cardValue}">`;
-            } else {
-              // Card is face down
-              card.innerHTML = `<img src="src/back.png" alt="Card Back">`;
-            }
-
-            card.onclick = function () {
-              console.log(`Card clicked: ${cardValue}`);
-              if (selectedCard) {
-                const oldColumn = selectedCard.parentNode;
-                column.appendChild(selectedCard);
-                flipLastCard(oldColumn);
-                selectedCard = null;
-              } else {
-                selectedCard = card;
-              }
-            };
-            column.appendChild(card);
+            displayPiles();
+          } else {
+            selectedCard.element.classList.remove("highlight");
+            selectedCard = null;
           }
+        } else {
+          const cardObject = piles[clickedPileIndex][clickedCardIndex];
 
-          tableau.appendChild(column);
+          if (clickedCardIndex === piles[clickedPileIndex].length - 1) {
+            selectedCard = {
+              card: cardObject,
+              cardIndex: clickedCardIndex,
+              pileIndex: clickedPileIndex,
+              element: clickedCardElement,
+            };
+            clickedCardElement.classList.add("highlight");
+          }
         }
       }
     </script>
