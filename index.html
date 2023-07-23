@@ -6,9 +6,10 @@
     <title>Solitaire</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="mx-auto max-w-6xl bg-gray-200">
+  <body
+    class="mx-auto max-w-6xl bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-purple-600 to-blue-600">
     <div class="container flex justify-center mx-auto">
-      <h1 class="text-5xl pt-2">Welcome to Solitaire!</h1>
+      <h1 class="text-5xl pt-2 text-white">Welcome to Solitaire!</h1>
 
       <div class="pl-5 pt-3">
         <button
@@ -26,10 +27,12 @@
       </div>
       <div class="pl-6">
         <div>
-          <p class="text-lg">Timer: <span id="timer"> </span></p>
+          <p class="text-lg text-white">Timer: <span id="timer"> </span></p>
         </div>
         <div>
-          <p class="text-lg">Move Counter: <span id="moveCounter"> </span></p>
+          <p class="text-lg text-white">
+            Move Counter: <span id="moveCounter"> </span>
+          </p>
         </div>
       </div>
     </div>
@@ -57,10 +60,11 @@
           class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
       </div>
     </div>
-    <div id="tableau" class="pt-2 flex justify-between gap-1 column"></div>
+    <div id="tableau" class="pt-2 flex gap-1 column">
+    </div>
     <style>
       .highlight {
-        box-shadow: 0 0 10px 2px red;
+        box-shadow: 0 0 10px 2px yellow;
       }
     </style>
 
@@ -71,6 +75,10 @@
       let stockPile = [];
       let wastePile = [];
       let piles = Array(7)
+        .fill(null)
+        .map(() => []);
+
+      let foundationPiles = Array(4)
         .fill(null)
         .map(() => []);
 
@@ -144,15 +152,21 @@
             piles[pileIndex].push(cards[cardIndex++]);
           }
         }
+// Clear the foundation piles
+foundationPiles = [[], [], [], []];
 
+// Clear the foundation piles in the UI
+for(let i = 1; i <= 4; i++) {
+    const foundationPileElement = document.getElementById(`foundation-${i}`);
+    foundationPileElement.innerHTML = "";
+}
         displayPiles();
       }
-
-      
 
       function displayPiles() {
         const tableau = document.getElementById("tableau");
         tableau.innerHTML = "";
+
         for (let pile of piles) {
           const pileDiv = document.createElement("div");
           pileDiv.classList.add("pileDiv");
@@ -228,7 +242,6 @@
         displayWastePile();
         displayStockPile();
       }
-
       function displayWastePile() {
         const pile = document.querySelector(".pile");
 
@@ -242,13 +255,37 @@
             i++
           ) {
             const card = wastePile[i];
-            imagesHTML += `<img src="${card.img}" alt="${card.code}">`;
+            imagesHTML += `<img src="${card.img}" alt="${card.code}" onclick="playCardFromWastePile(event, ${i})">`;
           }
 
           pile.innerHTML = imagesHTML;
         } else {
           pile.innerHTML = "";
         }
+      }
+
+      function playCardFromWastePile(event, cardIndex) {
+        
+        console.log("called");
+        const clickedCardElement = event.target;
+        const clickedCardCode = clickedCardElement.getAttribute("alt");
+
+        console.log("cardindex" + cardIndex);
+        console.log("wastepile length" + wastePile.length);
+        // if (cardIndex === wastePile.length - 1) {
+        console.log(selectedCard);
+        const cardObject = wastePile[cardIndex];
+
+        selectedCard = {
+          card: cardObject,
+          cardIndex: cardIndex,
+          pileIndex: -1, // -1 means the card is from the waste pile
+          element: clickedCardElement,
+        };
+        clickedCardElement.classList.add("highlight");
+
+        console.log(selectedCard);
+        //}
       }
 
       async function shuffleDeck() {
@@ -361,53 +398,257 @@
         }
       }
 
+      // function playCard(event) {
+      //   const clickedCardElement = event.target;
+      //   const clickedCardCode = clickedCardElement.getAttribute("data-value");
+      //   const clickedPileIndex = Array.from(
+      //     clickedCardElement.parentNode.parentNode.children
+      //   ).indexOf(clickedCardElement.parentNode);
+      //   const clickedCardIndex = Array.from(
+      //     clickedCardElement.parentNode.children
+      //   ).indexOf(clickedCardElement);
+
+      //   if (selectedCard) {
+      //     const selectedCardInfo = parseCardCode(selectedCard.card.code);
+      //     const clickedCardInfo = parseCardCode(clickedCardCode);
+
+      //     const selectedCardColor = getCardColor(selectedCardInfo.suit);
+      //     const clickedCardColor = getCardColor(clickedCardInfo.suit);
+
+      //     if (
+      //       selectedCardColor !== clickedCardColor &&
+      //       parseInt(selectedCardInfo.code) ===
+      //         parseInt(clickedCardInfo.code) - 1
+      //     ) {
+      //       let movedCards = piles[selectedCard.pileIndex].splice(
+      //         selectedCard.cardIndex
+      //       );
+      //       piles[clickedPileIndex] =
+      //         piles[clickedPileIndex].concat(movedCards);
+      //       incrementMoveCounter();
+      //       selectedCard.element.classList.remove("highlight");
+      //       selectedCard = null;
+
+      //       displayPiles();
+      //     } else {
+      //       selectedCard.element.classList.remove("highlight");
+      //       selectedCard = null;
+      //     }
+      //   } else {
+      //     const cardObject = piles[clickedPileIndex][clickedCardIndex];
+
+      //     if (clickedCardIndex === piles[clickedPileIndex].length - 1) {
+      //       selectedCard = {
+      //         card: cardObject,
+      //         cardIndex: clickedCardIndex,
+      //         pileIndex: clickedPileIndex,
+      //         element: clickedCardElement,
+      //       };
+      //       clickedCardElement.classList.add("highlight");
+      //     }
+      //   }
+      // }
+
       function playCard(event) {
-        const clickedCardElement = event.target;
-        const clickedCardCode = clickedCardElement.getAttribute("data-value");
-        const clickedPileIndex = Array.from(
-          clickedCardElement.parentNode.parentNode.children
-        ).indexOf(clickedCardElement.parentNode);
-        const clickedCardIndex = Array.from(
-          clickedCardElement.parentNode.children
-        ).indexOf(clickedCardElement);
+  const clickedCardElement = event.target;
+  const clickedCardCode = clickedCardElement.getAttribute("data-value");
+  const clickedPileIndex = Array.from(
+    clickedCardElement.parentNode.parentNode.children
+  ).indexOf(clickedCardElement.parentNode);
+  const clickedCardIndex = Array.from(
+    clickedCardElement.parentNode.children
+  ).indexOf(clickedCardElement);
+
+  if (selectedCard) {
+    const selectedCardInfo = parseCardCode(selectedCard.card.code);
+    const clickedCardInfo = parseCardCode(clickedCardCode);
+
+    const selectedCardColor = getCardColor(selectedCardInfo.suit);
+    const clickedCardColor = getCardColor(clickedCardInfo.suit);
+
+    if (
+      selectedCardColor !== clickedCardColor &&
+      parseInt(selectedCardInfo.code) ===
+        parseInt(clickedCardInfo.code) - 1
+    ) {
+      let movedCards;
+      if (selectedCard.pileIndex === -1) { // The card is from the waste pile
+        movedCards = wastePile.splice(selectedCard.cardIndex, 1);
+      } else {
+        movedCards = piles[selectedCard.pileIndex].splice(
+          selectedCard.cardIndex
+        );
+      }
+
+      piles[clickedPileIndex] = piles[clickedPileIndex].concat(movedCards);
+
+      incrementMoveCounter();
+      selectedCard.element.classList.remove("highlight");
+      selectedCard = null;
+
+      displayPiles();
+      displayWastePile();
+    } else {
+      selectedCard.element.classList.remove("highlight");
+      selectedCard = null;
+    }
+  } else {
+    const cardObject = piles[clickedPileIndex][clickedCardIndex];
+
+    if (clickedCardIndex === piles[clickedPileIndex].length - 1) {
+      selectedCard = {
+        card: cardObject,
+        cardIndex: clickedCardIndex,
+        pileIndex: clickedPileIndex,
+        element: clickedCardElement,
+      };
+      clickedCardElement.classList.add("highlight");
+    }
+  }
+}
+
+
+
+      // Add onclick events to the foundation piles
+      document.getElementById("foundation-1").onclick = moveCardToFoundation;
+      document.getElementById("foundation-2").onclick = moveCardToFoundation;
+      document.getElementById("foundation-3").onclick = moveCardToFoundation;
+      document.getElementById("foundation-4").onclick = moveCardToFoundation;
+
+      function moveCardToFoundation(event) {
+        console.log("Foundation pile was clicked: " + event.target.id);
+
+        let foundationPileElement;
+
+        // Check if the clicked element is a card
+        if (event.target.classList.contains("card")) {
+          // The clicked element is a card, so get its parent foundation pile
+          foundationPileElement = event.target.parentNode;
+        } else {
+          // The clicked element is the foundation pile itself
+          foundationPileElement = event.target;
+        }
+        foundationPileElement = event.target;
+        const foundationPileIndex = Array.from(
+          foundationPileElement.parentNode.children
+        ).indexOf(foundationPileElement);
 
         if (selectedCard) {
           const selectedCardInfo = parseCardCode(selectedCard.card.code);
-          const clickedCardInfo = parseCardCode(clickedCardCode);
 
-          const selectedCardColor = getCardColor(selectedCardInfo.suit);
-          const clickedCardColor = getCardColor(clickedCardInfo.suit);
-
-          if (
-            selectedCardColor !== clickedCardColor &&
-            parseInt(selectedCardInfo.code) ===
-              parseInt(clickedCardInfo.code) - 1
-          ) {
-            let movedCards = piles[selectedCard.pileIndex].splice(
-              selectedCard.cardIndex
+          let foundationPile = foundationPiles[foundationPileIndex];
+          if (foundationPile.length > 0) {
+            const topFoundationCardInfo = parseCardCode(
+              foundationPile[foundationPile.length - 1].code
             );
-            piles[clickedPileIndex] =
-              piles[clickedPileIndex].concat(movedCards);
-            incrementMoveCounter();
-            selectedCard.element.classList.remove("highlight");
-            selectedCard = null;
 
-            displayPiles();
+            // Verify that the selected card can be moved to this foundation pile
+            if (
+              selectedCardInfo.suit === topFoundationCardInfo.suit &&
+              parseInt(selectedCardInfo.code) ===
+                parseInt(topFoundationCardInfo.code) + 1
+            ) {
+              let movedCards = piles[selectedCard.pileIndex].splice(
+                selectedCard.cardIndex
+              );
+              foundationPiles[foundationPileIndex] =
+                foundationPiles[foundationPileIndex].concat(movedCards);
+              incrementMoveCounter();
+              selectedCard.element.classList.remove("highlight");
+              selectedCard = null;
+
+              displayPiles();
+              displayFoundationPiles();
+            } else {
+              selectedCard.element.classList.remove("highlight");
+              selectedCard = null;
+            }
           } else {
-            selectedCard.element.classList.remove("highlight");
-            selectedCard = null;
-          }
-        } else {
-          const cardObject = piles[clickedPileIndex][clickedCardIndex];
+            // If the foundation pile is empty, only an Ace can be placed
+            if (selectedCardInfo.code === "1") {
+              let movedCards = piles[selectedCard.pileIndex].splice(
+                selectedCard.cardIndex
+              );
+              foundationPiles[foundationPileIndex] =
+                foundationPiles[foundationPileIndex].concat(movedCards);
+              incrementMoveCounter();
+              selectedCard.element.classList.remove("highlight");
+              selectedCard = null;
 
-          if (clickedCardIndex === piles[clickedPileIndex].length - 1) {
-            selectedCard = {
-              card: cardObject,
-              cardIndex: clickedCardIndex,
-              pileIndex: clickedPileIndex,
-              element: clickedCardElement,
-            };
-            clickedCardElement.classList.add("highlight");
+              displayPiles();
+              displayFoundationPiles();
+            } else {
+              selectedCard.element.classList.remove("highlight");
+              selectedCard = null;
+            }
+          }
+        }
+      }
+
+      // Function to be called when a foundation pile is clicked
+      function onFoundationPileClick(event) {
+        console.log("Foundation pile was clicked: " + event.target.id);
+      }
+
+      //   function addFoundationPileHandlers() {
+      //   for (let i = 1; i <= 4; i++) {
+      //     const foundationPileElement = document.getElementById(`foundation-${i}`);
+      //     foundationPileElement.onclick = function () {
+      //       if (!selectedCard) return; // No card selected, so ignore the click
+
+      //       // Try to add the card to the foundation pile
+      //       if (addCardToFoundationPile(i - 1, selectedCard.card)) {
+      //         // Remove the card from its original pile
+      //         piles[selectedCard.pileIndex].splice(selectedCard.cardIndex, 1);
+
+      //         // Clear selectedCard and update the display
+      //         selectedCard = null;
+      //         displayPiles();
+      //         displayFoundationPiles();
+      //       }
+      //     };
+      //   }
+      // }
+
+      // function addCardToFoundationPile(pileIndex, card) {
+      //   const foundationPile = foundationPiles[pileIndex];
+
+      //   // Get the card info
+      //   const cardInfo = parseCardCode(card.code);
+
+      //   if (foundationPile.length === 0) {
+      //     // The pile is empty. Only an Ace can be placed.
+      //     if (cardInfo.code === "1") {
+      //       foundationPile.push(card);
+      //       return true;
+      //     }
+      //   } else {
+      //     // The pile is not empty. The card must be the same suit as the top card, and one greater in value.
+      //     const topCardInfo = parseCardCode(foundationPile[foundationPile.length - 1].code);
+      //     if (topCardInfo.suit === cardInfo.suit && parseInt(topCardInfo.code) + 1 === parseInt(cardInfo.code)) {
+      //       foundationPile.push(card);
+      //       return true;
+      //     }
+      //   }
+
+      //   return false;
+      // }
+
+      function displayFoundationPiles() {
+        for (let i = 0; i < foundationPiles.length; i++) {
+          const foundationPile = foundationPiles[i];
+          const foundationPileElement = document.getElementById(
+            `foundation-${i + 1}`
+          );
+
+          // Clear the current cards in the foundation pile
+          foundationPileElement.innerHTML = "";
+
+          // Display the top card in the pile
+          if (foundationPile.length > 0) {
+            const topCard = foundationPile[foundationPile.length - 1];
+            const cardElement = createCardElement(topCard.code, false, null);
+            foundationPileElement.appendChild(cardElement);
           }
         }
       }
