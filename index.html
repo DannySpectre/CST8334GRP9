@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,9 +6,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body
-    class="mx-auto max-w-6xl bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-purple-600 to-blue-600">
+    class="mx-auto h-screen max-w-6xl bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-purple-600 to-blue-600">
     <div class="container flex justify-center mx-auto">
-      <h1 class="text-5xl pt-2 text-white">Welcome to Solitaire!</h1>
+      <h1 class="text-5xl pt-2 text-white">Welcome to Solitaire</h1>
 
       <div class="pl-5 pt-3">
         <button
@@ -37,27 +36,27 @@
       </div>
     </div>
     <div class="container flex justify-center mx-auto">
-      <div class="pt-2 flex justify-start gap-1 pl-5">
-        <div id="deck" class="w-[150px] h-[200px] pl-2"></div>
-        <div
-          id="pile"
-          class="rounded border border-black pile flex justify-start w-[150px] h-[200px] pl-2"></div>
-        <div id="pile-2" class="w-[150px] h-[200px] pl-2"></div>
-        <div id="pile-3" class="w-[150px] h-[200px] pl-2"></div>
+      <div class="pt-2 flex justify-start gap-1 pl-5 pileContainer2">
+        <!-- Add the "pileContainer" class to the waste pile container -->
+        <div id="deck" class="w-[100px] h-[150px]"></div>
+        <div id="pile" class="rounded border border-black pile flex justify-start w-[100px] h-[150px] pl-2">
+          <!-- Add the "card" class to each waste pile card -->
+          <!-- These cards will be positioned using the ".wasteCard" class in the CSS -->
+        </div>
       </div>
-      <div class="pl-20 pt-2 flex justify-end gap-1">
+      <div class="pl-20 pt-2 flex justify-end gap-2">
         <div
           id="foundation-1"
-          class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
+          class="rounded border border-black w-[100px] h-[150px] pl-2"></div>
         <div
           id="foundation-2"
-          class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
+          class="rounded border border-black w-[100px] h-[150px] pl-2"></div>
         <div
           id="foundation-3"
-          class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
+          class="rounded border border-black w-[100px] h-[150px] pl-2"></div>
         <div
           id="foundation-4"
-          class="rounded border border-black w-[150px] h-[200px] pl-2"></div>
+          class="rounded border border-black w-[100px] h-[150px] pl-2"></div>
       </div>
     </div>
     <div id="tableau" class="pt-2 flex gap-1 column">
@@ -66,6 +65,44 @@
       .highlight {
         box-shadow: 0 0 10px 2px yellow;
       }
+      .pileContainer {
+  position: relative;
+ 
+}
+
+.pileContainer2 {
+  position: relative;
+}
+
+.pileContainer img {
+  max-width: none;
+}
+
+
+.card {
+  width: 100px;
+  height: 150px;
+  border: 1px solid #000;
+  border-radius: 5px;
+  position: absolute;
+}
+
+.wasteCard {
+  left: calc(var(--card-width) * var(--card-index)) !important;
+}
+
+
+.face-down {
+  background-color: #999;
+}
+
+/* Adjust the vertical and horizontal position of each card */
+.card:nth-child(n) {
+  top: calc(var(--card-height) * (var(--card-index) * 0.2)) !important;
+  left: calc(var(--card-width) * (var(--pile-index) * 1.5 + var(--card-index) * 0.1)) !important;
+}
+
+
     </style>
 
     <script>
@@ -144,52 +181,65 @@
           console.log("Error Creating Deck", error);
         }
       }
+      let cardIndex = 0;
 
       function distributeCardsToPiles(cards) {
-        let cardIndex = 0;
-        for (let pileIndex = 0; pileIndex < 7; pileIndex++) {
-          for (let j = 0; j <= pileIndex; j++) {
-            piles[pileIndex].push(cards[cardIndex++]);
-          }
-        }
-// Clear the foundation piles
-foundationPiles = [[], [], [], []];
+  for (let pileIndex = 0; pileIndex < 7; pileIndex++) {
+    for (let j = 0; j <= pileIndex; j++) {
+      const card = cards.pop(); // Get the last card from the array
+      card.faceDown = j < pileIndex; // Set faceDown property based on the card's position in the pile
+      piles[pileIndex].push(card);
+    }
+  }
 
-// Clear the foundation piles in the UI
-for(let i = 1; i <= 4; i++) {
+  // Clear the foundation piles
+  foundationPiles = [[], [], [], []];
+
+  // Clear the foundation piles in the UI
+  for (let i = 1; i <= 4; i++) {
     const foundationPileElement = document.getElementById(`foundation-${i}`);
     foundationPileElement.innerHTML = "";
+  }
+
+  displayPiles();
+  displayFoundationPiles();
 }
-        displayPiles();
-      }
 
-      function displayPiles() {
-        const tableau = document.getElementById("tableau");
-        tableau.innerHTML = "";
+function shouldCardBeFaceDown(pile, cardIndex) {
+  if (cardIndex === pile.length - 1) {
+    return false; // The last card in the pile should always be face-up
+  } else {
+    return pile[cardIndex].faceDown; // Retain the current faceDown state for other cards
+  }
+}
 
-        for (let pile of piles) {
-          const pileDiv = document.createElement("div");
-          pileDiv.classList.add("pileDiv");
+function displayPiles() {
+  const tableau = document.getElementById("tableau");
+  tableau.innerHTML = "";
 
-          // Display all cards but the last one as face down
-          for (let i = 0; i < pile.length - 1; i++) {
-            const cardElement = createCardElement(pile[i].code, true, playCard); // face-down
-            pileDiv.appendChild(cardElement);
-          }
+  for (let pileIndex = 0; pileIndex < piles.length; pileIndex++) {
+    const pile = piles[pileIndex];
+    const pileContainer = document.createElement("div");
+    pileContainer.classList.add("pileContainer");
 
-          // Display the last card as face up
-          if (pile.length > 0) {
-            const cardElement = createCardElement(
-              pile[pile.length - 1].code,
-              false,
-              playCard
-            ); // face-up
-            pileDiv.appendChild(cardElement);
-          }
+    for (let cardIndex = 0; cardIndex < pile.length; cardIndex++) {
+      const card = pile[cardIndex];
+      const isLastCard = cardIndex === pile.length - 1;
 
-          tableau.appendChild(pileDiv);
-        }
-      }
+      // Create the card element
+      const cardElement = createCardElement(
+        card.code,
+        (card.faceDown && !isLastCard), // Keep face-down if not the last card
+        playCard,
+        pileIndex,
+        cardIndex
+      );
+      pileContainer.appendChild(cardElement);
+    }
+
+    tableau.appendChild(pileContainer);
+  }
+}
 
       async function drawRemainingCards(remainingCards) {
         try {
@@ -243,50 +293,38 @@ for(let i = 1; i <= 4; i++) {
         displayStockPile();
       }
       function displayWastePile() {
-        const pile = document.querySelector(".pile");
+  const pile = document.querySelector("#pile"); // Select the specific waste pile container
 
-        if (wastePile.length > 0) {
-          let imagesHTML = "";
-          const numImages = Math.min(wastePile.length, 3); // Display up to 3 images
+  if (wastePile.length > 0) {
+    let imagesHTML = "";
+    const numImages = Math.min(wastePile.length, 3); // Display up to 3 images
 
-          for (
-            let i = wastePile.length - numImages;
-            i < wastePile.length;
-            i++
-          ) {
-            const card = wastePile[i];
-            imagesHTML += `<img src="${card.img}" alt="${card.code}" onclick="playCardFromWastePile(event, ${i})">`;
-          }
+    for (let i = wastePile.length - numImages; i < wastePile.length; i++) {
+      const card = wastePile[i];
+      imagesHTML += `<img class="card" src="${card.img}" alt="${card.code}" onclick="playCardFromWastePile(event, ${i})">`;
+    }
 
-          pile.innerHTML = imagesHTML;
-        } else {
-          pile.innerHTML = "";
-        }
-      }
+    pile.innerHTML = imagesHTML;
+  } else {
+    pile.innerHTML = "";
+  }
+}
 
       function playCardFromWastePile(event, cardIndex) {
-        
-        console.log("called");
-        const clickedCardElement = event.target;
-        const clickedCardCode = clickedCardElement.getAttribute("alt");
+  const clickedCardElement = event.target;
+  const clickedCardCode = clickedCardElement.getAttribute("alt");
 
-        console.log("cardindex" + cardIndex);
-        console.log("wastepile length" + wastePile.length);
-        // if (cardIndex === wastePile.length - 1) {
-        console.log(selectedCard);
-        const cardObject = wastePile[cardIndex];
+  const cardObject = wastePile[cardIndex];
+  cardObject.faceDown = false; // Set the card face-up when moved from waste to tableau
 
-        selectedCard = {
-          card: cardObject,
-          cardIndex: cardIndex,
-          pileIndex: -1, // -1 means the card is from the waste pile
-          element: clickedCardElement,
-        };
-        clickedCardElement.classList.add("highlight");
-
-        console.log(selectedCard);
-        //}
-      }
+  selectedCard = {
+    card: cardObject,
+    cardIndex: cardIndex,
+    pileIndex: -1, // -1 means the card is from the waste pile
+    element: clickedCardElement,
+  };
+  clickedCardElement.classList.add("highlight");
+}
 
       async function shuffleDeck() {
         let response = await fetch(
@@ -322,23 +360,28 @@ for(let i = 1; i <= 4; i++) {
         }
       }
 
-      function createCardElement(cardValue, isFaceDown, clickHandler) {
-        const cardElement = document.createElement("img");
-        cardElement.setAttribute("data-value", cardValue);
-        cardElement.onclick = clickHandler;
-        if (isFaceDown) {
-          cardElement.setAttribute("src", "src/back.png");
-          cardElement.classList.add("down");
-        } else {
-          cardElement.setAttribute(
-            "src",
-            `https://deckofcardsapi.com/static/img/${cardValue}.png`
-          );
-          cardElement.classList.remove("down");
-        }
-        return cardElement;
-      }
+      function createCardElement(cardValue, isFaceDown, clickHandler, pileIndex, cardIndex) {
+  const cardElement = document.createElement("img");
+  cardElement.setAttribute("data-value", cardValue);
+  cardElement.onclick = clickHandler;
+  cardElement.classList.add("card");
+  cardElement.style.setProperty("--card-width", "100px");
+  cardElement.style.setProperty("--card-height", "150px");
+  cardElement.style.setProperty("--pile-index", pileIndex);
+  cardElement.style.setProperty("--card-index", cardIndex);
 
+  if (isFaceDown) {
+    cardElement.classList.add("face-down");
+    cardElement.setAttribute("src", "src/back.png");
+  } else {
+    cardElement.classList.remove("face-down"); // Remove the "face-down" class for face-up cards
+    cardElement.setAttribute(
+      "src",
+      `https://deckofcardsapi.com/static/img/${cardValue}.png`
+    );
+  }
+  return cardElement;
+}
       function parseCardCode(cardCode) {
         let code = cardCode.slice(0, -1);
         const suitCode = cardCode[cardCode.length - 1];
@@ -398,57 +441,6 @@ for(let i = 1; i <= 4; i++) {
         }
       }
 
-      // function playCard(event) {
-      //   const clickedCardElement = event.target;
-      //   const clickedCardCode = clickedCardElement.getAttribute("data-value");
-      //   const clickedPileIndex = Array.from(
-      //     clickedCardElement.parentNode.parentNode.children
-      //   ).indexOf(clickedCardElement.parentNode);
-      //   const clickedCardIndex = Array.from(
-      //     clickedCardElement.parentNode.children
-      //   ).indexOf(clickedCardElement);
-
-      //   if (selectedCard) {
-      //     const selectedCardInfo = parseCardCode(selectedCard.card.code);
-      //     const clickedCardInfo = parseCardCode(clickedCardCode);
-
-      //     const selectedCardColor = getCardColor(selectedCardInfo.suit);
-      //     const clickedCardColor = getCardColor(clickedCardInfo.suit);
-
-      //     if (
-      //       selectedCardColor !== clickedCardColor &&
-      //       parseInt(selectedCardInfo.code) ===
-      //         parseInt(clickedCardInfo.code) - 1
-      //     ) {
-      //       let movedCards = piles[selectedCard.pileIndex].splice(
-      //         selectedCard.cardIndex
-      //       );
-      //       piles[clickedPileIndex] =
-      //         piles[clickedPileIndex].concat(movedCards);
-      //       incrementMoveCounter();
-      //       selectedCard.element.classList.remove("highlight");
-      //       selectedCard = null;
-
-      //       displayPiles();
-      //     } else {
-      //       selectedCard.element.classList.remove("highlight");
-      //       selectedCard = null;
-      //     }
-      //   } else {
-      //     const cardObject = piles[clickedPileIndex][clickedCardIndex];
-
-      //     if (clickedCardIndex === piles[clickedPileIndex].length - 1) {
-      //       selectedCard = {
-      //         card: cardObject,
-      //         cardIndex: clickedCardIndex,
-      //         pileIndex: clickedPileIndex,
-      //         element: clickedCardElement,
-      //       };
-      //       clickedCardElement.classList.add("highlight");
-      //     }
-      //   }
-      // }
-
       function playCard(event) {
   const clickedCardElement = event.target;
   const clickedCardCode = clickedCardElement.getAttribute("data-value");
@@ -459,6 +451,13 @@ for(let i = 1; i <= 4; i++) {
     clickedCardElement.parentNode.children
   ).indexOf(clickedCardElement);
 
+  const card = piles[clickedPileIndex][clickedCardIndex];
+  if (card.faceDown) {
+    card.faceDown = false;
+    clickedCardElement.classList.remove("face-down");
+    clickedCardElement.src = `https://deckofcardsapi.com/static/img/${card.code}.png`;
+  }
+
   if (selectedCard) {
     const selectedCardInfo = parseCardCode(selectedCard.card.code);
     const clickedCardInfo = parseCardCode(clickedCardCode);
@@ -468,17 +467,21 @@ for(let i = 1; i <= 4; i++) {
 
     if (
       selectedCardColor !== clickedCardColor &&
-      parseInt(selectedCardInfo.code) ===
-        parseInt(clickedCardInfo.code) - 1
+      parseInt(selectedCardInfo.code) === parseInt(clickedCardInfo.code) - 1
     ) {
       let movedCards;
       if (selectedCard.pileIndex === -1) { // The card is from the waste pile
         movedCards = wastePile.splice(selectedCard.cardIndex, 1);
-      } else {
-        movedCards = piles[selectedCard.pileIndex].splice(
-          selectedCard.cardIndex
-        );
+      } else if (selectedCard.pileIndex >= 0 && selectedCard.pileIndex < piles.length) { // The card is from a tableau pile
+        movedCards = piles[selectedCard.pileIndex].splice(selectedCard.cardIndex);
+      } else { // The card is from a foundation pile
+        movedCards = foundationPiles[selectedCard.pileIndex - piles.length].splice(selectedCard.cardIndex, 1);
       }
+
+      // Set the faceDown property for the moved cards
+      movedCards.forEach((card) => {
+        card.faceDown = false; // Moved cards are always face-up
+      });
 
       piles[clickedPileIndex] = piles[clickedPileIndex].concat(movedCards);
 
@@ -487,6 +490,7 @@ for(let i = 1; i <= 4; i++) {
       selectedCard = null;
 
       displayPiles();
+      displayFoundationPiles();
       displayWastePile();
     } else {
       selectedCard.element.classList.remove("highlight");
@@ -495,7 +499,8 @@ for(let i = 1; i <= 4; i++) {
   } else {
     const cardObject = piles[clickedPileIndex][clickedCardIndex];
 
-    if (clickedCardIndex === piles[clickedPileIndex].length - 1) {
+    if (!card.faceDown)
+ {
       selectedCard = {
         card: cardObject,
         cardIndex: clickedCardIndex,
@@ -507,132 +512,148 @@ for(let i = 1; i <= 4; i++) {
   }
 }
 
+function canMoveCards(selectedCards, targetCardCode) {
+  if (selectedCards.length === 1) {
+    // Only one card selected, check if it can be moved to the target card
+    const selectedCardInfo = parseCardCode(selectedCards[0].code);
+    const targetCardInfo = parseCardCode(targetCardCode);
+    const selectedCardColor = getCardColor(selectedCardInfo.suit);
+    const targetCardColor = getCardColor(targetCardInfo.suit);
+
+    return (
+      selectedCardColor !== targetCardColor &&
+      parseInt(selectedCardInfo.code) === parseInt(targetCardInfo.code) - 1
+    );
+  } else {
+    // Multiple cards selected, check if the entire batch can be moved to the target card
+    const targetCardInfo = parseCardCode(targetCardCode);
+    const targetCardColor = getCardColor(targetCardInfo.suit);
+
+    for (let i = 0; i < selectedCards.length; i++) {
+      const cardInfo = parseCardCode(selectedCards[i].code);
+      const cardColor = getCardColor(cardInfo.suit);
+
+      if (
+        cardColor === targetCardColor ||
+        parseInt(cardInfo.code) !== parseInt(targetCardInfo.code) + i + 1
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+}
 
 
       // Add onclick events to the foundation piles
       document.getElementById("foundation-1").onclick = moveCardToFoundation;
       document.getElementById("foundation-2").onclick = moveCardToFoundation;
       document.getElementById("foundation-3").onclick = moveCardToFoundation;
-      document.getElementById("foundation-4").onclick = moveCardToFoundation;
+      document.getElementById("foundation-4").onclick = moveCardToFoundation;    //   console.log("Foundation pile was clicked: " + event.target.id);
+
+     
 
       function moveCardToFoundation(event) {
-        console.log("Foundation pile was clicked: " + event.target.id);
+  console.log("Foundation pile was clicked: " + event.target.id);
 
-        let foundationPileElement;
+  let foundationPileElement;
 
-        // Check if the clicked element is a card
-        if (event.target.classList.contains("card")) {
-          // The clicked element is a card, so get its parent foundation pile
-          foundationPileElement = event.target.parentNode;
-        } else {
-          // The clicked element is the foundation pile itself
-          foundationPileElement = event.target;
+  // Check if the clicked element is a card
+  if (event.target.classList.contains("card")) {
+    // The clicked element is a card, so get its parent foundation pile
+    foundationPileElement = event.target.parentNode;
+  } else {
+    // The clicked element is the foundation pile itself
+    foundationPileElement = event.target;
+  }
+
+  const foundationPileIndex = Array.from(
+    foundationPileElement.parentNode.children
+  ).indexOf(foundationPileElement);
+
+  if (selectedCard) {
+    const selectedCardInfo = parseCardCode(selectedCard.card.code);
+
+    let foundationPile = foundationPiles[foundationPileIndex];
+    if (foundationPile.length > 0) {
+      const topFoundationCardInfo = parseCardCode(
+        foundationPile[foundationPile.length - 1].code
+      );
+
+      if (selectedCard.pileIndex === -1) {
+      selectedCard.card.faceDown = false; // The card is from the waste pile
+    } else {
+      // The card is from a tableau or foundation pile
+      piles[selectedCard.pileIndex].forEach((card, index) => {
+        card.faceDown = index < selectedCard.cardIndex;
+      });
+    }
+
+      // Verify that the selected card can be moved to this foundation pile
+      if (
+        selectedCardInfo.suit === topFoundationCardInfo.suit &&
+        parseInt(selectedCardInfo.code) ===
+          parseInt(topFoundationCardInfo.code) + 1
+      ) {
+        let movedCards;
+        if (selectedCard.pileIndex === -1) { // The card is from the waste pile
+          movedCards = wastePile.splice(selectedCard.cardIndex, 1);
+        } else if (selectedCard.pileIndex >= 0 && selectedCard.pileIndex < piles.length) { // The card is from a tableau pile
+          movedCards = piles[selectedCard.pileIndex].splice(selectedCard.cardIndex);
+        } else { // The card is from a foundation pile
+          movedCards = foundationPiles[selectedCard.pileIndex - piles.length].splice(selectedCard.cardIndex, 1);
         }
-        foundationPileElement = event.target;
-        const foundationPileIndex = Array.from(
-          foundationPileElement.parentNode.children
-        ).indexOf(foundationPileElement);
+        
+        foundationPiles[foundationPileIndex] =
+          foundationPiles[foundationPileIndex].concat(movedCards);
+        incrementMoveCounter();
+        selectedCard.element.classList.remove("highlight");
+        selectedCard = null;
 
-        if (selectedCard) {
-          const selectedCardInfo = parseCardCode(selectedCard.card.code);
-
-          let foundationPile = foundationPiles[foundationPileIndex];
-          if (foundationPile.length > 0) {
-            const topFoundationCardInfo = parseCardCode(
-              foundationPile[foundationPile.length - 1].code
-            );
-
-            // Verify that the selected card can be moved to this foundation pile
-            if (
-              selectedCardInfo.suit === topFoundationCardInfo.suit &&
-              parseInt(selectedCardInfo.code) ===
-                parseInt(topFoundationCardInfo.code) + 1
-            ) {
-              let movedCards = piles[selectedCard.pileIndex].splice(
-                selectedCard.cardIndex
-              );
-              foundationPiles[foundationPileIndex] =
-                foundationPiles[foundationPileIndex].concat(movedCards);
-              incrementMoveCounter();
-              selectedCard.element.classList.remove("highlight");
-              selectedCard = null;
-
-              displayPiles();
-              displayFoundationPiles();
-            } else {
-              selectedCard.element.classList.remove("highlight");
-              selectedCard = null;
-            }
-          } else {
-            // If the foundation pile is empty, only an Ace can be placed
-            if (selectedCardInfo.code === "1") {
-              let movedCards = piles[selectedCard.pileIndex].splice(
-                selectedCard.cardIndex
-              );
-              foundationPiles[foundationPileIndex] =
-                foundationPiles[foundationPileIndex].concat(movedCards);
-              incrementMoveCounter();
-              selectedCard.element.classList.remove("highlight");
-              selectedCard = null;
-
-              displayPiles();
-              displayFoundationPiles();
-            } else {
-              selectedCard.element.classList.remove("highlight");
-              selectedCard = null;
-            }
-          }
-        }
+        displayPiles();
+        displayFoundationPiles();
+      } else {
+        selectedCard.element.classList.remove("highlight");
+        selectedCard = null;
       }
+    } else {
+      // If the foundation pile is empty, only an Ace can be placed
+      if (selectedCardInfo.code === "1") {
+        let movedCards;
+        if (selectedCard.pileIndex === -1) { // The card is from the waste pile
+          movedCards = wastePile.splice(selectedCard.cardIndex, 1);
+        } else if (selectedCard.pileIndex >= 0 && selectedCard.pileIndex < piles.length) { // The card is from a tableau pile
+          movedCards = piles[selectedCard.pileIndex].splice(selectedCard.cardIndex);
+        } else { // The card is from a foundation pile
+          movedCards = foundationPiles[selectedCard.pileIndex - piles.length].splice(selectedCard.cardIndex, 1);
+        }
+
+        foundationPiles[foundationPileIndex] =
+          foundationPiles[foundationPileIndex].concat(movedCards);
+        incrementMoveCounter();
+        selectedCard.element.classList.remove("highlight");
+        selectedCard = null;
+
+        displayPiles();
+        displayFoundationPiles();
+      } else {
+        selectedCard.element.classList.remove("highlight");
+        selectedCard = null;
+      }
+    }
+  }
+  displayWastePile();
+        displayStockPile();
+}
+
 
       // Function to be called when a foundation pile is clicked
       function onFoundationPileClick(event) {
         console.log("Foundation pile was clicked: " + event.target.id);
       }
 
-      //   function addFoundationPileHandlers() {
-      //   for (let i = 1; i <= 4; i++) {
-      //     const foundationPileElement = document.getElementById(`foundation-${i}`);
-      //     foundationPileElement.onclick = function () {
-      //       if (!selectedCard) return; // No card selected, so ignore the click
-
-      //       // Try to add the card to the foundation pile
-      //       if (addCardToFoundationPile(i - 1, selectedCard.card)) {
-      //         // Remove the card from its original pile
-      //         piles[selectedCard.pileIndex].splice(selectedCard.cardIndex, 1);
-
-      //         // Clear selectedCard and update the display
-      //         selectedCard = null;
-      //         displayPiles();
-      //         displayFoundationPiles();
-      //       }
-      //     };
-      //   }
-      // }
-
-      // function addCardToFoundationPile(pileIndex, card) {
-      //   const foundationPile = foundationPiles[pileIndex];
-
-      //   // Get the card info
-      //   const cardInfo = parseCardCode(card.code);
-
-      //   if (foundationPile.length === 0) {
-      //     // The pile is empty. Only an Ace can be placed.
-      //     if (cardInfo.code === "1") {
-      //       foundationPile.push(card);
-      //       return true;
-      //     }
-      //   } else {
-      //     // The pile is not empty. The card must be the same suit as the top card, and one greater in value.
-      //     const topCardInfo = parseCardCode(foundationPile[foundationPile.length - 1].code);
-      //     if (topCardInfo.suit === cardInfo.suit && parseInt(topCardInfo.code) + 1 === parseInt(cardInfo.code)) {
-      //       foundationPile.push(card);
-      //       return true;
-      //     }
-      //   }
-
-      //   return false;
-      // }
+  
 
       function displayFoundationPiles() {
         for (let i = 0; i < foundationPiles.length; i++) {
@@ -652,6 +673,9 @@ for(let i = 1; i <= 4; i++) {
           }
         }
       }
+
+      startGame()
+
     </script>
   </body>
 </html>
